@@ -72,7 +72,7 @@ class MemTest():
 				print "Connected to Arduino\n"
 				self._connected = True
 
-		time.sleep(1)
+		time.sleep(0.5)
 		ser.write(str(self._prognum))          # Write the commands to the Arduino
 		ser.write(chr(self._wordline))
 		ser.write(chr(self._bitline))
