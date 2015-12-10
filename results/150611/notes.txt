@@ -1,9 +1,0 @@
-20150608 CRS from SJ lefthand sample
-
-I-V testing: -2 to 2 V 26 steps (160 mV)
-
-4.7uF cap
-dev01:   V=2.0, WRITE=2x100ms, P=2x200ms, 
-dev02:   V=1.5, WRITE=2x100ms, P=2x200ms,
-dev02-2: V=1.5, WRITE=2x100ms, P=1x100ms,
-dev02-3: V=1.5, WRITE=2x100ms, P=1x100ms,
