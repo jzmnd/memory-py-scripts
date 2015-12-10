@@ -2,7 +2,7 @@
 Memoryfunctions.cpp - Library for memory testing functions
 Jeremy Smith
 EECS, University of California Berkeley
-Version 1.4
+Version 1.6
 */
 
 #include <Arduino.h>
@@ -38,24 +38,27 @@ Memoryfunctions::Memoryfunctions(){
 
   _digitalPinReadWL[0] = 36;    // Digital read WL0
   _digitalPinReadWL[1] = 38;    // Digital read WL1
-  _digitalPinReadWL[2] = 40;    // Digital read       
+  _digitalPinReadWL[2] = 40;    // Digital read
+
+  _ledPin = 13;     // LED pin
 }
 
 /*
-Functions for:
-1. precharging
-2. applying a pattern
-3. reading the word line voltage
-4. forming array
-5. reading from a single cell
-6. writing a 0 to a single cell
-7. writing a 1 to a single cell
+Basic functions for:
+1. Precharging
+2. Applying a pattern
+3. Reading the word line voltage
+4. Forming array
+5. Reading from a single cell
+6. Writing a 0 to a single cell
+7. Writing a 1 to a single cell
 */
 
 void Memoryfunctions::precharge(int t, int line){
+  Serial.println(F("PREC..."));
   digitalWrite(_digitalPinWL[line], HIGH); // WL[line]: V
   delay(t);
-  digitalWrite(_digitalPinWL[line], LOW);  // WL[line]: float
+  digitalWrite(_digitalPinINHWL, HIGH);    // Inhibit WLs (keeps each WL floating and isolated)
 }
 
 void Memoryfunctions::applypattern(int pattern, int t){
@@ -81,10 +84,10 @@ void Memoryfunctions::applypattern(int pattern, int t){
 }
 
 void Memoryfunctions::wordlineread(int line){
-  // read voltage(time)
+  // read voltage as function of time
   timer2.reset();
   for (int i=0; i<500; i++){
-    _time[i] = timer2.get_count();  // counts every 0.5 us
+    _time[i] = timer2.get_count();                    // counts every 0.5 us
     _vwordline[i] = analogRead(_analogPinARD[line]);  // voltage read on WL[line]
   }
   #if MEASURETYPE
@@ -107,6 +110,7 @@ void Memoryfunctions::wordlineread(int line){
     digitalWrite(_digitalPinBL[i], LOW); // BL[i]: float
   }
   digitalWrite(_digitalPinINHBL, LOW);   // Enable BLs
+  digitalWrite(_digitalPinINHWL, LOW);   // Enable WLs
 }
 
 void Memoryfunctions::forming(int t){
@@ -154,7 +158,7 @@ int Memoryfunctions::stdread(int w, int b, int t){
 }
 
 void Memoryfunctions::stdwriteZERO(int w, int b, int t){
-  Serial.println(F("WRT 0..."));
+  Serial.println(F("WRT0..."));
   digitalWrite(_digitalPinINHWL, HIGH);  // Inhibit WLs
   digitalWrite(_digitalPinINHBL, HIGH);  // Inhibit BLs
 
@@ -175,7 +179,7 @@ void Memoryfunctions::stdwriteZERO(int w, int b, int t){
 }
 
 void Memoryfunctions::stdwriteONE(int w, int b, int t){
-  Serial.println(F("WRT 1..."));
+  Serial.println(F("WRT1..."));
   digitalWrite(_digitalPinINHWL, HIGH);  // Inhibit WLs
   digitalWrite(_digitalPinINHBL, HIGH);  // Inhibit BLs
 
@@ -201,6 +205,8 @@ void Memoryfunctions::gndall(int t){
   digitalWrite(_digitalPinINHBL, HIGH);  // Inhibit BLs
   digitalWrite(_digitalPinWLSELB, LOW);  // WLs: WLSELC mode (GND)
   digitalWrite(_digitalPinBLSELB, LOW);  // BLs: BLSELC mode (GND)
+  digitalWrite(_digitalPinWLSELC, HIGH);  // WLs: GND
+  digitalWrite(_digitalPinBLSELC, HIGH);  // BLs: GND
   for (int i=0; i<3; i++){
     digitalWrite(_digitalPinWL[i], LOW);   // WL[i]: GND
     digitalWrite(_digitalPinBL[i], LOW);   // BL[i]: GND
@@ -208,12 +214,7 @@ void Memoryfunctions::gndall(int t){
   digitalWrite(_digitalPinINHWL, LOW);  // Enable WLs
   digitalWrite(_digitalPinINHBL, LOW);  // Enable BLs
   delay(t);
-  digitalWrite(_digitalPinINHWL, HIGH);  // Inhibit WLs
-  digitalWrite(_digitalPinINHBL, HIGH);  // Inhibit BLs
-  digitalWrite(_digitalPinWLSELB, HIGH);  // WLs: float mode
-  digitalWrite(_digitalPinBLSELB, HIGH);  // BLs: float mode
-  digitalWrite(_digitalPinINHWL, LOW);  // Enable WLs
-  digitalWrite(_digitalPinINHBL, LOW);  // Enable BLs
+  // REMEMBER TO RE-INITIALIZE AFTER CALLING GNDALL
 }
 
 /*
@@ -324,7 +325,7 @@ void Memoryfunctions::initOneThirdTwoThirdONE(){
 }
 
 /*
-Other functions
+Other basic functions
 */
 
 void Memoryfunctions::establishContact(char contact){
@@ -332,4 +333,79 @@ void Memoryfunctions::establishContact(char contact){
     Serial.print(contact);   // send a byte every second
     delay(1000);
   }
+}
+
+/*
+High level functions for:
+1. Content addressable read
+2. Forming all bits
+3. Writing a ZERO state
+4. Writing a ONE state
+5. Standard read function
+*/
+
+void Memoryfunctions::camread(int line, int pattern, int t_pat, int t_pre, int t_gnd){
+  // Content addressable read function
+  digitalWrite(_ledPin, HIGH);
+  initContentAddress();                 // reinitialize
+  precharge(t_pre, line);               // precharge time, WL number
+  applypattern(pattern, t_pat);         // pattern (binary), time for applying pattern in ms
+  wordlineread(line);                   // WL number
+  gndall(t_gnd);                        // grounds all lines for time in ms
+  digitalWrite(_ledPin, LOW);
+}
+
+void Memoryfunctions::formarray(int t_form, int loop, int t_gnd){
+  // Forming all bits function
+  digitalWrite(_ledPin, HIGH);
+  initOneThirdTwoThirdZERO();           // 1/3-2/3 initialize ZERO write
+  for (int i=0; i<loop; i++){
+    forming(t_form);                    // forming time in ms (set all bits to 0-state)
+  }
+  gndall(t_gnd);                        // grounds all lines for time in ms
+  digitalWrite(_ledPin, LOW);
+}
+
+void Memoryfunctions::writeZERO(int w, int b, int t_write, int loop, int t_gnd){
+  // Write a ZERO state function
+  digitalWrite(_ledPin, HIGH);
+  initOneThirdTwoThirdZERO();           // 1/3-2/3 initialize ZERO write
+  delay(100);
+  for (int i=0; i<loop; i++){
+    stdwriteZERO(w, b, t_write);        // write 0 to bit w, b, for time in ms
+  }
+  delay(100);
+  gndall(t_gnd);                        // grounds all lines for time in ms
+  digitalWrite(_ledPin, LOW);
+}
+
+void Memoryfunctions::writeONE(int w, int b, int t_write, int loop, int t_gnd){
+  // Write a ONE state function
+  digitalWrite(_ledPin, HIGH);
+  initOneThirdTwoThirdONE();            // 1/3-2/3 initialize ONE write
+  delay(100);
+  for (int i=0; i<loop; i++){
+    stdwriteONE(w, b, t_write);         // write 1 to bit w, b, for time in ms
+  }
+  delay(100);
+  gndall(t_gnd);                        // grounds all lines for time in ms
+  digitalWrite(_ledPin, LOW);
+}
+
+int Memoryfunctions::stdread_rewrite(int w, int b, int t_read, int t_write, int loop, int t_gnd){
+  // Standard read functon and rewrite
+  // STILL IN TESTING
+  digitalWrite(_ledPin, HIGH);
+  initOneThirdTwoThirdZERO();           // 1/3-2/3 initialize ZERO write
+  int state = stdread(w, b, t_read);    // read at bit w, b, for time in ms
+  Serial.println(state);
+  if (state == 1){                      // rewrite bit if it was a 1 state
+    initOneThirdTwoThirdONE();
+    for (int i=0; i<loop; i++){
+      stdwriteONE(w, b, t_write);       // write 1 to bit w, b, for time in ms
+    }
+    gndall(t_gnd);                      // grounds all lines for time in ms
+  }
+  digitalWrite(_ledPin, LOW);
+  return state;
 }

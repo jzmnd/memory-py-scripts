@@ -2,7 +2,7 @@
 """
 MemTest.py
 Memory testing class to connect to Arduino
-Use with memory_test_v2.ino
+Use with memory_test_v3.ino
 
 Created by Jeremy Smith on 2015-06-19
 University of California, Berkeley
@@ -23,7 +23,7 @@ class MemTest():
 	v_ratio = 5.0/1023
 	time_step = 0.5
 
-	def __init__(self, serialport, program, wordline=0, bitline=0, pattern=0, rtime=100, ftime=200, loop=1, baud=115200):
+	def __init__(self, serialport, program, wordline=0, bitline=0, pattern=0, rtime=100, ftime=200, loop=1, gtime=100, baud=115200):
 		_progdict = {'camread': 1, 'form': 2, 'writezero': 3, 'writeone': 4, 'stdread': 5}
 		try:
 			self._prognum = _progdict[program]    # Program number
@@ -39,6 +39,7 @@ class MemTest():
 		self._rtime = rtime                       # Read/write pulse time
 		self._ftime = ftime                       # Forming/precharge pulse time
 		self._loop = loop                         # Number of loops
+		self._gtime = gtime                       # Ground time
 		self._baud = baud                         # Arduino serial port bit rate
 
 		self._connected = False
@@ -51,6 +52,8 @@ class MemTest():
 		self._headlist.append("Read/write time: {:d} ms".format(rtime))
 		self._headlist.append("Form/precharge time: {:d} ms".format(ftime))
 		self._headlist.append("Number of read/write pulses: {:d}".format(loop))
+		self._headlist.append("Ground time: {:d} ms".format(gtime))
+
 
 	def __repr__(self):
 		return '\n'.join(self._headlist)
@@ -74,12 +77,13 @@ class MemTest():
 
 		time.sleep(0.5)
 		ser.write(str(self._prognum))          # Write the commands to the Arduino
-		ser.write(chr(self._wordline))
-		ser.write(chr(self._bitline))
-		ser.write(chr(self._pattern))
-		ser.write(chr(self._rtime))
-		ser.write(chr(self._ftime))
-		ser.write(chr(self._loop))
+		ser.write(chr(self._wordline))         # buffer 0
+		ser.write(chr(self._bitline))          # buffer 1
+		ser.write(chr(self._pattern))          # buffer 2
+		ser.write(chr(self._rtime))            # buffer 3
+		ser.write(chr(self._ftime))            # buffer 4
+		ser.write(chr(self._loop))             # buffer 5
+		ser.write(chr(self._gtime))            # buffer 6
 
 		while self._connected:                 # Wait until the Arduino tells us it is finished
 			serin = ser.read()

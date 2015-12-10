@@ -2,7 +2,7 @@
 Memoryfunctions.h - Library for memory testing functions
 Jeremy Smith
 EECS, University of California Berkeley
-Version 1.4
+Version 1.6
 */
 
 #ifndef Memoryfunctions_h
@@ -30,6 +30,12 @@ class Memoryfunctions {
     void initOneThirdTwoThirdZERO();
     // declare other functions
     void establishContact(char);
+    // declare high level functions
+    void camread(int, int, int, int, int);
+    void formarray(int, int, int);
+    void writeZERO(int, int, int, int, int);
+    void writeONE(int, int, int, int, int);
+    int stdread_rewrite(int, int, int, int, int, int);
   private:
     int _analogPinARD[3];       // Analog reads for WLs
     int _digitalPinWL[3];       // Controls for WLs
@@ -46,6 +52,8 @@ class Memoryfunctions {
 
     int _digitalPinINHWL;       // Inhibit all WLs
     int _digitalPinINHBL;       // Inhibit all BLs
+
+    int _ledPin;
 
     unsigned int _vwordline[500]; // Stores analogue voltage read on WL
     unsigned long _time[500];     // Stores time in ms during read

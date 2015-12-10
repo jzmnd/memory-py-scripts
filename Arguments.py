@@ -2,7 +2,7 @@
 """
 Arguments.py
 Class for parsing memory testing arguments
-Use with memory_test_v2.ino
+Use with memory_test_v3.ino
 
 Created by Jeremy Smith on 2015-07-10
 University of California, Berkeley
@@ -28,6 +28,7 @@ class Arguments(ArgumentParser):
 		self.add_argument('-r', '--writepulse', default=100, type=int, help="Write pulse time in ms")
 		self.add_argument('-p', '--prechargepulse', default=200, type=int, help="Precharge time in ms")
 		self.add_argument('-l', '--loop', default=1, type=int, help="Number of read/write pulses")
+		self.add_argument('-g', '--gndpulse', default=100, type=int, help="Ground time in ms")
 
 		self.add_argument('filename', nargs='?', type=str, default='output', help="Output file name")
 

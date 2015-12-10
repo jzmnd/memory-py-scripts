@@ -2,7 +2,7 @@
 """
 memory_test_v2.py
 Memory testing python script
-Use with memory_test_v2.ino
+Use with memory_test_v3.ino
 
 Created by Jeremy Smith on 2015-06-18
 University of California, Berkeley
@@ -17,7 +17,7 @@ from Arguments import *
 from MemTest import *
 
 __author__ = "Jeremy Smith"
-__version__ = "2.1"
+__version__ = "2.3"
 
 # Define constants
 serialport = '/dev/cu.usbmodem1421'
@@ -36,19 +36,21 @@ def main():
 	print "Email: j-smith@eecs.berkeley.edu"
 	print "================================\n"
 
-	args = Arguments().parse()
-	writelist = []                                       # List of write objects
+	args = Arguments().parse()        # Command line arguements 
+	writelist = []                    # List of write objects
 
-	for i, c in enumerate(args['pattern']):                    # Creates list of write objects for each CRS device
+	# Creates list of write objects for each CRS device
+	for i, c in enumerate(args['pattern']):
 		if c == '0':
-			writelist.append(MemTest(serialport, 'writezero', wordline=i//args['arraysize'], bitline=i%args['arraysize'], rtime=args['writepulse'], loop=args['loop']))
+			writelist.append(MemTest(serialport, 'writezero', wordline=i//args['arraysize'], bitline=i%args['arraysize'], rtime=args['writepulse'], loop=args['loop'], gtime=args['gndpulse']))
 		elif c == '1':
-			writelist.append(MemTest(serialport, 'writeone', wordline=i//args['arraysize'], bitline=i%args['arraysize'], rtime=args['writepulse'], loop=args['loop']))
+			writelist.append(MemTest(serialport, 'writeone', wordline=i//args['arraysize'], bitline=i%args['arraysize'], rtime=args['writepulse'], loop=args['loop'], gtime=args['gndpulse']))
 		else:
 			print "Write pattern error - use 0 or 1"
 
+	# Runs writes and then does CAM read
 	for a in range(2**args['arraysize']):
-		applypattern = MemTest(serialport, 'camread', wordline=args['wordline'], pattern=a, ftime=args['prechargepulse'], loop=1)
+		applypattern = MemTest(serialport, 'camread', wordline=args['wordline'], pattern=a, ftime=args['prechargepulse'])
 		raw_input("\nSet WRITE voltage. Press Enter to continue...")
 		for write in writelist:
 			write.run()

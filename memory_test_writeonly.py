@@ -2,7 +2,7 @@
 """
 memory_test_writeonly.py
 Memory testing python script (write states only with no read)
-Use with memory_test_v2.ino
+Use with memory_test_v3.ino
 
 Created by Jeremy Smith on 2015-07-10
 University of California, Berkeley
@@ -17,7 +17,7 @@ from Arguments import *
 from MemTest import *
 
 __author__ = "Jeremy Smith"
-__version__ = "1.0"
+__version__ = "1.1"
 
 # Define constants
 serialport = '/dev/cu.usbmodem1421'
@@ -41,9 +41,9 @@ def main():
 
 	for i, c in enumerate(args['pattern']):                    # Creates list of write objects for each CRS device
 		if c == '0':
-			writelist.append(MemTest(serialport, 'writezero', wordline=i//args['arraysize'], bitline=i%args['arraysize'], rtime=args['writepulse'], loop=args['loop']))
+			writelist.append(MemTest(serialport, 'writezero', wordline=i//args['arraysize'], bitline=i%args['arraysize'], rtime=args['writepulse'], loop=args['loop'], gtime=args['gndpulse']))
 		elif c == '1':
-			writelist.append(MemTest(serialport, 'writeone', wordline=i//args['arraysize'], bitline=i%args['arraysize'], rtime=args['writepulse'], loop=args['loop']))
+			writelist.append(MemTest(serialport, 'writeone', wordline=i//args['arraysize'], bitline=i%args['arraysize'], rtime=args['writepulse'], loop=args['loop'], gtime=args['gndpulse']))
 		else:
 			print "Write pattern error - use 0 or 1"
 
